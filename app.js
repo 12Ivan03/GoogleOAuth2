@@ -22,6 +22,7 @@ const authRoutes = require("./routes/auth.router");
 app.use("/auth", authRoutes);
 
 const profileRoutes = require("./routes/profile.router");
+const cookieParser = require("cookie-parser");
 app.use("/profile", profileRoutes);
 
 // ❗ To handle errors. Routes that don't exist or errors that you handle in specific routes

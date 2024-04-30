@@ -4,35 +4,44 @@ const { google } = require('googleapis');
 const jwt = require('jsonwebtoken');
 
 router.get("/login", (req, res, next) => {
-  console.log('hello')
-  res.json("login - normal path");
+    console.log("hallo from the login")
+        res.json("Login through Google mail, you cheeky monkey... ;)");
 });
 
 router.get("/google-login", async (req, res,next) => {
 
-    const oauth2Client = new google.auth.OAuth2(
-        process.env.CLIENT_ID,
-        process.env.CLIENT_SECRET,
-        process.env.REDIRECT_URI
-    )
+    try{
+        const oauth2Client = new google.auth.OAuth2(
+            process.env.CLIENT_ID,
+            process.env.CLIENT_SECRET,
+            process.env.REDIRECT_URI
+        );
 
-    const scopes = [
-        'https://www.googleapis.com/auth/userinfo.profile', 
-        'https://www.googleapis.com/auth/userinfo.email openid'
-    ];
+        const scopes = [
+            'https://www.googleapis.com/auth/userinfo.profile', 
+            'https://www.googleapis.com/auth/userinfo.email openid'
+        ];
 
-    const authorizationUrl = oauth2Client.generateAuthUrl({
-        access_type: 'offline',
-        scope: scopes,
-        include_granted_scopes: true
-    })
+        const authorizationUrl = oauth2Client.generateAuthUrl({
+            access_type: 'offline',
+            scope: scopes,
+            include_granted_scopes: true
+        });
 
-    res.json(authorizationUrl)
+        const response = { 
+            authorizationUrl, 
+            procces: "successful"
+        };
+
+        res.json(response);
+
+    } catch(err){
+        res.json({ errorMsg: "Internal Server Error" });
+    }
 })
 
 router.get("/google-login/callback", async (req, res, next) => {
     const { code }  = req.query;
-    console.log("code", code )
 
     try {
         const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', {
@@ -44,18 +53,25 @@ router.get("/google-login/callback", async (req, res, next) => {
         });
 
         const accessToken = await tokenResponse.data.id_token;
-        console.log(":access token ===> it should be here ===>", accessToken)
+        const decodedToken = await jwt.decode(accessToken);
+        // extracted only the info form the token.
+        const userInfo = {
+            email: decodedToken.email, 
+            fullName: decodedToken.name, 
+            givenName: decodedToken.given_name, 
+            familyName: decodedToken.family_name, 
+            image: decodedToken.picture
+        };
 
-        const decodeGoogleJwt = await jwt.decode(accessToken);
-        console.log("All the info we have requested from the scope ... HERE ===>", decodeGoogleJwt)
-
-        // extracted only the email form the token.
-        const userEmail = decodeGoogleJwt.email;
-        console.log(userEmail)
-
+        res.cookie('decodedToken', userInfo, { path: '/' });
+        res.redirect("http://localhost:5173/profile");
+        
     } catch(err){
-        console.log(err)
+        res.json({ errorMsg: "Internal Server Error"});
     }
+
 })
+
+
 
 module.exports = router;
