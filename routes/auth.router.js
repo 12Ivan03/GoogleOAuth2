@@ -45,10 +45,10 @@ router.get("/google-login/callback", async (req, res, next) => {
 
     try {
         const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', {
-            client_id: '1078305261897-57v5b8q3jl1smr72ag1ca47h71m5dfep.apps.googleusercontent.com',
-            client_secret: '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',
+            client_id: process.env.CLIENT_ID,
+            client_secret: process.env.CLIENT_SECRET,
             code: code,
-            redirect_uri: 'http://localhost:5005/auth/google-login/callback',
+            redirect_uri: process.env.REDIRECT_URI,
             grant_type: 'authorization_code'
         });
 
